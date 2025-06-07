@@ -1,0 +1,25 @@
+@startuml
+actor User
+participant Graffiti
+participant System
+participant Robot
+participant Camera
+
+User -> Graffiti: Sees graffiti
+User -> System: Declare problem
+System -> Camera: Capture image
+Camera -> System: Analyse image
+System -> System: Find graffiti
+System -> Robot: Call robot
+System -> System: Find robot
+System -> Camera: Capture image
+System -> System: Recognize robot
+System -> System: Calculate path
+System -> System: Send move command
+System -> Robot: Move command
+Robot -> System: Moving to graffiti
+Robot -> Graffiti: Robot arrived
+Robot -> Graffiti: Delete graffiti
+Robot -> System: Graffiti deleted (confirmation)
+
+@enduml

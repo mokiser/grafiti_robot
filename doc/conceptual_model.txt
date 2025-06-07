@@ -1,0 +1,15 @@
+@startuml
+class Graffiti
+class Server
+class Robot
+class Camera
+
+
+' Связи между классами
+Camera --> Server : получает изображение
+Server --> Robot : управляет
+Robot --> Graffiti : прибыл к граффити
+Robot --> Graffiti : стирает граффити
+
+
+@enduml
