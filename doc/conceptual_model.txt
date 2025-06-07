@@ -1,15 +1,27 @@
 @startuml
-class Graffiti
-class Server
-class Robot
-class Camera
 
+class User {
+}
 
-' Связи между классами
-Camera --> Server : получает изображение
-Server --> Robot : управляет
-Robot --> Graffiti : прибыл к граффити
-Robot --> Graffiti : стирает граффити
+class ReportingSystem {
+}
 
+class Server {
+}
+
+class CleaningRobot {
+}
+
+class Camera {
+}
+
+class Graffiti {
+}
+
+User --> ReportingSystem : reports graffiti
+ReportingSystem --> Server : sends graffiti data
+Server --> CleaningRobot : calculates path and controls
+Server <--> Camera : accesses and receives images
+CleaningRobot --> Graffiti : arrives and erases
 
 @enduml
