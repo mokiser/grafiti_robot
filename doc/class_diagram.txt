@@ -1,75 +1,64 @@
 @startuml
-
 skinparam classAttributeIconSize 0
+hide empty members
 left to right direction
 
-package "Robot Control System" {
+package "Server (Python)" {
+  class GraffitiDetectionServer {
+    - client: mqtt.Client
+    - cap: cv2.VideoCapture
+    - last_auto_command_time: float
+    - reached_green: bool
+    --
+    + detect_objects(frame): tuple
+    + automatic_control(frame): void
+    + manual_control(key): void
+    + log_command(command, type): void
+  }
+}
 
+package "Robot (C++)" {
   class GPIOController {
-    - gpio_pins: std::vector<int>
+    - gpio_pins: vector<int>
     - gpio_chip_fd: int
-    - pin_handles: std::vector<int>
+    - pin_handlers: vector<int>
     --
-    - gpio_write(pin_index: int, value: uint8_t): void
+    - gpio_write(index, value): void
     --
-    + GPIOController()
     + forward(): void
     + backward(): void
     + left(): void
     + right(): void
     + stop(): void
-    + ~GPIOController()
   }
 
   class MqttGpioReceiver {
-    - mosq_: struct mosquitto*
-    - last_gpio_data_: std::string
-    - mutex_: std::mutex
-    - thread_: std::thread
-    - running_: bool
+    - mosq: mosquitto*
+    - last_gpio_data: string
+    - mutex: mutex
+    - thread: thread
+    - running: bool
     --
-    - {static} message_callback(mosq: struct mosquitto*, obj: void*, msg: const struct mosquitto_message*): void
+    + get_gpio_data(): string
+    - message_callback(): static void
     - loop(): void
-    --
-    + MqttGpioReceiver(host: const char*, port: int, topic: const char*)
-    + ~MqttGpioReceiver()
-    + get_gpio_data(): std::string
   }
 
   class GpioProcessor {
-    - gpio_: GPIOController&
-    - receiver_: MqttGpioReceiver&
+    - gpio: GPIOController&
+    - receiver: MqttGpioReceiver&
     --
-    + GpioProcessor(gpio: GPIOController&, receiver: MqttGpioReceiver&)
-    + run(): void
-  }
-
-  note "Main function creates and connects:\nGPIOController, MqttGpioReceiver, GpioProcessor" as MainNote
-  GpioProcessor .. MainNote
-}
-
-package "Server System" {
-
-  class GraffitiDetectionServer {
-    - client: mqtt.Client
-    - cap: cv2.VideoCapture
-    --
-    + detect_graffiti(): bool
-    + send_cleaning_command(command: str): void
-    + process_frame(): void
     + run(): void
   }
 }
 
 GpioProcessor o-- GPIOController : controls
-GpioProcessor o-- MqttGpioReceiver : receives\ncommands from
+GpioProcessor o-- MqttGpioReceiver : uses
 
-MqttGpioReceiver ..> "mosquitto" : uses
-GPIOController ..> "linux/gpio.h" : uses
-GraffitiDetectionServer ..> "paho.mqtt.client" : uses
+GraffitiDetectionServer ..> "paho.mqtt" : uses
 GraffitiDetectionServer ..> "OpenCV" : uses
+MqttGpioReceiver ..> "libmosquitto" : uses
+GPIOController ..> "linux/gpio.h" : uses
 
-GraffitiDetectionServer --> MqttGpioReceiver : sends commands via\nMQTT (robot/gpio)
-GraffitiDetectionServer --> GraffitiDetectionServer : processes\nvideo feed
-
+GraffitiDetectionServer --> MqttGpioReceiver : sends commands MQTT
 @enduml
