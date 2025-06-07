@@ -1,28 +1,79 @@
-﻿cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10)
+
 project(robot LANGUAGES CXX)
 
-# Set C++ standard
-set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(PROJECT_NAME robot)
 
-set(CMAKE_FIND_ROOT_PATH /usr/arm-linux-gnueabihf)
-set(CMAKE_LIBRARY_PATH /usr/arm-linux-gnueabihf/lib /usr/local/lib)
+add_executable(${PROJECT_NAME}
+    robot.cpp
+)
 
-# Find Mosquitto
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(MOSQUITTO REQUIRED libmosquitto)
-if(NOT MOSQUITTO_FOUND)
-    message(FATAL_ERROR "Mosquitto library not found")
-else()
-     message(STATUS "Found MQTT: ${MOSQUITTO_INCLUDE_DIRS}")
-endif()
-include_directories(${MOSQUITTO_INCLUDE_DIRS})
+include(FetchContent)
+set(FETCHCONTENT_QUIET ON)
+
+#FetchContent_Declare(
+#    mosquitto
+#    GIT_REPOSITORY https://github.com/eclipse/mosquitto.git
+#    GIT_TAG a196c2b244f248072a6b3ac8fb3f00ce0ff63dea
+#)
+set(WITH_DOCS OFF CACHE BOOL "[Mosquitto] Disablee documentation build" FORCE)
+set(DOCUMENTATION OFF CACHE BOOL "[Mosquitto] Docs" FORCE)
+set(WITH_APPS OFF CACHE BOOL "[Mosquitto] App build" FORCE)
+set(WITH_CJSON OFF CACHE BOOL "[Mosquitto] Disablee JSON build" FORCE)
+set(WITH_STATIC_LIBRARIES ON CACHE BOOL "")
+set(WITH_PIC  ON CACHE BOOL "")
+
+set(WITH_SHARED_LIBRARIES ON CACHE BOOL "[Mosquitto] lib" FORCE)
+
+set(WITH_TLS OFF CACHE BOOL "[Mosquitto] SSL/TLS support" FORCE)
+	
+
+set(CMAKE_EXE_LINKER_FLAGS "-static")
+
+#FetchContent_MakeAvailable(mosquitto)
+
+#FetchContent_GetProperties(mosquitto
+#    POPULATED mosquitto_POPULATED
+#    SOURCE_DIR mosquitto_SOURCE_DIR
+#    BINARY_DIR mosquitto_BINARY_DIR
+#)
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/mosquitto/include
+        ${mosquitto_SOURCE_DIR}/include
+
+        ${mosquitto_SOURCE_DIR}/include
+        ${mosquitto_SOURCE_DIR}/lib
+        ${mosquitto_SOURCE_DIR}/lib/cpp
+        ${mosquitto_BINARY_DIR}/lib
+        ${mosquitto_BINARY_DIR}/lib/cpp
+        ${mosquitto_BINARY_DIR}
+)
+
+message("DIR================== ${mosquittopp_BINARY_DIR}")
 
 
-# Add executable
-add_executable(robot robot.cpp)
+target_link_directories(${PROJECT_NAME}
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/mosquitto/build/lib
+        ${CMAKE_SOURCE_DIR}/mosquitto/build/lib/cpp
+        ${mosquitto_SOURCE_DIR}/include
+        ${mosquitto_SOURCE_DIR}/lib
+        ${mosquitto_SOURCE_DIR}/lib/cpp
+        ${mosquitto_BINARY_DIR}
+)
 
-# Link libraries
-target_link_libraries(robot ${MOSQUITTO_LIBRARIES})
-target_link_libraries(robot ${MOSQUITTO_LIBRARIES})
+
+#target_link_directoriess(${PROJECT_NAME} PRIVATE mosquittopp_static.a)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE mosquittopp_static)
+target_link_libraries(${PROJECT_NAME} PRIVATE mosquitto_static)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE pthread)
+
+
+target_include_directories(robot PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
